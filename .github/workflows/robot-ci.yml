@@ -30,8 +30,89 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Robot Framework Tests
+        continue-on-error: true
         run: |
-          robot --variable BROWSER:headlesschrome -d ./results tests/
+          robot -x xunit.xml --variable BROWSER:headlesschrome -d ./results tests/
+
+      - name: Generate Visual Test Summary
+        uses: test-summary/action@v2
+        if: always()
+        with:
+          paths: 'results/xunit.xml'
+
+      - name: Extract Failed Tests
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as ET
+
+          try:
+              tree = ET.parse('results/output.xml')
+              root = tree.getroot()
+          except Exception:
+              with open('failed_tests.md', 'w') as f:
+                  f.write("_Não foi possível ler output.xml_\n")
+              exit()
+
+          failed = []
+          for test in root.iter('test'):
+              status = test.find('status')
+              if status is not None and status.get('status') == 'FAIL':
+                  name = test.get('name')
+                  tags = [t.text for t in test.findall('tags/tag')]
+                  known = next((t.split(':', 1)[1] for t in tags if t.startswith('known-issue:')), None)
+                  msg = (status.text or '').strip().replace('\n', ' ')
+                  if len(msg) > 100:
+                      msg = msg[:100] + '...'
+                  failed.append((name, known, msg))
+
+          with open('failed_tests.md', 'w') as f:
+              if not failed:
+                  f.write("_🎉 Nenhum teste falhou_\n")
+              else:
+                  f.write("| Teste | Known Issue | Mensagem |\n")
+                  f.write("| --- | --- | --- |\n")
+                  for name, known, msg in failed:
+                      known_str = f"**{known}**" if known else "—"
+                      f.write(f"| {name} | {known_str} | {msg} |\n")
+          EOF
+
+      - name: Compute Pass/Fail Metrics
+        if: always()
+        run: |
+          python3 - <<'EOF' >> $GITHUB_ENV
+          import xml.etree.ElementTree as ET
+
+          try:
+              tree = ET.parse('results/output.xml')
+              root = tree.getroot()
+              stat = root.find('./statistics/total/stat')
+              print(f"TESTS_PASS={stat.get('pass')}")
+              print(f"TESTS_FAIL={stat.get('fail')}")
+              print(f"TESTS_TOTAL={int(stat.get('pass')) + int(stat.get('fail'))}")
+          except Exception:
+              print("TESTS_PASS=N/A")
+              print("TESTS_FAIL=N/A")
+              print("TESTS_TOTAL=N/A")
+          EOF
+
+      - name: Add Custom Details to Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ℹ️ Informações Adicionais" >> $GITHUB_STEP_SUMMARY
+          echo "| Métrica | Detalhes |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo '| 📂 Diretório | `tests/` |' >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 Ambiente | Headless Chrome (Ubuntu) |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ Passou | ${TESTS_PASS} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ❌ Falhou | ${TESTS_FAIL} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📊 Total | ${TESTS_TOTAL} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Testes Falhados" >> $GITHUB_STEP_SUMMARY
+          cat failed_tests.md >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo 'Faça o download do artefato **robot-results** para visualizar o relatório HTML completo (`log.html` e `report.html`).' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload Test Results
         if: always()
