@@ -1,0 +1,14 @@
+# Robot Framework Output
+results/
+log.html
+report.html
+output.xml
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Node (usado pela Browser Library)
+node_modules/
