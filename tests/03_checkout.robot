@@ -17,7 +17,8 @@ Sauce-8: Persistencia dos itens selecionados no carrinho
     Clicar No Produto "Sauce Labs Bike Light"
     Validar Pagina De Detalhes Do Produto
     Acessar Carrinho
-    Get Text    css=.inventory_item_name    ==    Sauce Labs Backpack
+    Wait Until Element Is Visible    css=.inventory_item_name    timeout=10s
+    Element Text Should Be           css=.inventory_item_name    Sauce Labs Backpack
 
 Sauce-9: Validacao de campos obrigatorios no checkout
     [Tags]    checkout

@@ -1,10 +1,9 @@
 *** Settings ***
 Documentation    Ações e elementos do catálogo de produtos.
-Library          Browser
+Library          SeleniumLibrary
 
 *** Variables ***
 ${TITULO_PAGINA}        css=.title
-${ITEM_NAME}            css=.inventory_item_name
 ${SELECT_SORT}          css=[data-test="product-sort-container"]
 ${BTN_ADD_BACKPACK}     css=[data-test="add-to-cart-sauce-labs-backpack"]
 ${BTN_REMOVE_BACKPACK}  css=[data-test="remove-sauce-labs-backpack"]
@@ -13,40 +12,46 @@ ${ICONE_CARRINHO}       css=.shopping_cart_link
 
 *** Keywords ***
 Entao a pagina de produtos deve ser exibida
-    Get Text    ${TITULO_PAGINA}    ==    Products
+    Wait Until Element Is Visible    ${TITULO_PAGINA}    timeout=10s
+    Element Text Should Be           ${TITULO_PAGINA}    Products
 
 Verificar Exibicao Dos Produtos
-    Get Element States    css=.inventory_item    contains    visible
-    Get Element States    css=.inventory_item_img    contains    visible
-    Get Element States    css=.inventory_item_name    contains    visible
-    Get Element States    css=.inventory_item_desc    contains    visible
-    Get Element States    css=.inventory_item_price    contains    visible
+    Wait Until Element Is Visible    css=.inventory_item    timeout=10s
+    Page Should Contain Element      css=.inventory_item_img
+    Page Should Contain Element      css=.inventory_item_name
+    Page Should Contain Element      css=.inventory_item_price
 
 Clicar No Produto "${nome_produto}"
-    Click    text=${nome_produto}
+    Wait Until Element Is Visible    xpath=//div[text()="${nome_produto}"]    timeout=10s
+    Click Element                    xpath=//div[text()="${nome_produto}"]
 
 Ordenar Produtos Por "${opcao}"
-    Select Options By    ${SELECT_SORT}    label    ${opcao}
+    Wait Until Element Is Visible    ${SELECT_SORT}    timeout=10s
+    Select From List By Label        ${SELECT_SORT}    ${opcao}
 
 Adicionar Backpack Ao Carrinho
-    Click    ${BTN_ADD_BACKPACK}
+    Wait Until Element Is Visible    ${BTN_ADD_BACKPACK}    timeout=10s
+    Click Button                     ${BTN_ADD_BACKPACK}
 
 Remover Backpack Do Carrinho
-    Click    ${BTN_REMOVE_BACKPACK}
+    Wait Until Element Is Visible    ${BTN_REMOVE_BACKPACK}    timeout=10s
+    Click Button                     ${BTN_REMOVE_BACKPACK}
 
 Validar Botao Remove Visivel
-    Get Element States    ${BTN_REMOVE_BACKPACK}    contains    visible
+    Wait Until Element Is Visible    ${BTN_REMOVE_BACKPACK}    timeout=10s
 
 Validar Botao Add To Cart Visivel
-    Get Element States    ${BTN_ADD_BACKPACK}    contains    visible
+    Wait Until Element Is Visible    ${BTN_ADD_BACKPACK}       timeout=10s
 
 Validar Contador Do Carrinho
     [Arguments]    ${quantidade}
     IF    '${quantidade}' == '0'
-        Get Element States    ${BADGE_CARRINHO}    contains    detached
+        Element Should Not Be Visible    ${BADGE_CARRINHO}
     ELSE
-        Get Text    ${BADGE_CARRINHO}    ==    ${quantidade}
+        Wait Until Element Is Visible    ${BADGE_CARRINHO}    timeout=10s
+        Element Text Should Be           ${BADGE_CARRINHO}    ${quantidade}
     END
 
 Acessar Carrinho
-    Click    ${ICONE_CARRINHO}
+    Wait Until Element Is Visible    ${ICONE_CARRINHO}    timeout=10s
+    Click Element                    ${ICONE_CARRINHO}

@@ -1,9 +1,9 @@
 *** Settings ***
 Documentation    Ações e elementos da página de detalhes do produto.
-Library          Browser
+Library          SeleniumLibrary
 
 *** Keywords ***
 Validar Pagina De Detalhes Do Produto
-    Get Url    contains    inventory-item.html
-    Get Element States    css=.inventory_details_name    contains    visible
-    Get Element States    css=[data-test="add-to-cart"]    contains    visible
+    Wait Until Location Contains     inventory-item.html    timeout=10s
+    Wait Until Element Is Visible    css=.inventory_details_name    timeout=10s
+    Wait Until Element Is Visible    css=[data-test="add-to-cart"]    timeout=10s
