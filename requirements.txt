@@ -1,2 +1,4 @@
 robotframework==7.0
-robotframework-browser==18.3.0
+robotframework-seleniumlibrary
+selenium
+webdriver-manager
